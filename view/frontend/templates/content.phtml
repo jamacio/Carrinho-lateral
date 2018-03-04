@@ -1,0 +1,102 @@
+<?php
+
+use Magento\Framework\App\Bootstrap;
+
+
+
+$params = $_SERVER;
+$bootstrap = Bootstrap::create(BP, $params);
+
+$obj = $bootstrap->getObjectManager();
+
+$state = $obj->get('Magento\Framework\App\State');
+$state->setAreaCode('frontend');
+
+$objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+$cart = $objectManager->get('\Magento\Checkout\Model\Cart');
+$storeManager = $objectManager->get('\Magento\Store\Model\StoreManagerInterface');
+$baseUrl = $storeManager->getStore()->getBaseUrl();
+
+$items = $cart->getQuote()->getAllItems();
+
+switch ($_REQUEST['t']) {
+    case 1:
+        $html = '';
+        $qtdTotal = 0;
+        $valortotal = 0.00;
+        foreach ($items as $item) {
+            $qtd = 0;
+            $ProductId = $item->getProductId();
+            $_product = $objectManager->get('Magento\Catalog\Model\Product')->load($ProductId);
+            $html .= '<div class="item-carrinho"> <div id="load-item-carrinho" style="display: none"><img src="'.$this->getViewFileUrl('IW3_Carrinholateral::images/load.gif').'" /></div>';
+            $precoProd = $item->getPrice();
+            $html .= '<a href="javascript:deletarItem(' . $ProductId . ')">x</a>';
+
+            if($img = $_product->getData('image') )
+              $html .= '<div class="col-md-5"><img src="' . $baseUrl . 'pub/media/catalog/product' . $img . '"></div>';
+
+            $html .= '<div class="col-md-7"><p class="cl-nome">' . $item->getName() . '</p>';
+            $html .= '<p class="cl-preco">' . $this->helper('Magento\Framework\Pricing\Helper\Data')->currency($precoProd) . '</p>';
+            $html .= '<p class="cl-sku">' . $item->getSku() . '</p>';
+            $html .= '<input type="button" class="btn-qty-carrinho" id="minus" value="-" onclick="process(-1,' . $ProductId . ')" />';
+            $html .= '<input type="text"maxlength="12" id="qty-cart-' . $ProductId . '" onblur="atualizarQtd(this,' . $ProductId . ')" value="' . $item->getQty() . '" title="Qtd" class="input-text input-qty-carrinho">';
+            $html .= '<input type="button" class="btn-qty-carrinho" id="plus" value="+" onclick="process(1,' . $ProductId . ')">';
+            $html .= '</div>';
+
+            $html .= '</div>';
+            $qtd += $item->getQty();
+            $qtdTotal += $qtd;
+            $valortotal += ($precoProd * $qtd);
+        }
+
+        if ($qtdTotal == 1 || $qtdTotal == 0)
+            $fraseQtd = $qtdTotal . __(' item');
+        else
+            $fraseQtd = $qtdTotal . __(' itens');
+
+        echo '<div class="topo-carrinho"><div class="btn-fechar"> <a href="javascript:closeNav()" > < </a></div><div class="titulo-carrinho">' . __('Meu Carrinho') . '</div><div class="qtd-topo-carrinho">' . $fraseQtd . '</div></div>';
+        echo '<div class="conteudo-produto">';
+        echo $html;
+        echo '</div>';
+
+        echo '<div class="conteudo-totais">';
+        echo '<span class="total">' . __('Valor Total:  ') . $this->helper('Magento\Framework\Pricing\Helper\Data')->currency($valortotal) . '</span>';
+        echo '<a href="' . $baseUrl . 'checkout/cart/" class="total-btn-carrinho">' . __('Carrinho') . '</a>';
+        echo '<a href="' . $baseUrl . 'checkout" class="total-btn-finalizar">' . __('Finalizar compra') . '</a>';
+        echo '</div>';
+        break;
+    case 2:
+
+        foreach ($items as $item) {
+            if ($item->getProductId() == $_REQUEST['id']) {
+                $item->setQty((double)$_REQUEST['qtd']);
+                $item->getProduct()->setIsSuperMode(true);
+                $item->save();
+
+            }
+        }
+        break;
+    case 3:
+        $qtdAtual = 0;
+        foreach ($items as $item) {
+            $qtdAtual += $item->getQty();
+        }
+        echo <<<HTML
+  <a class="action showcart" href="javascript:openNav()">
+        <span class="counter qty" data-bind="css: { empty: !!getCartParam('summary_count') == false }, blockLoader: isLoading">
+            <span class="counter-number">$qtdAtual</span>
+        </span>
+    </a>
+HTML;
+
+        break;
+    case 4:
+        foreach ($items as $item) {
+            if ($item->getProductId() == $_REQUEST['id']) {
+                $item->delete();
+
+            }
+        }
+    default:
+        echo "Faltou paramentros para o retorno";
+}

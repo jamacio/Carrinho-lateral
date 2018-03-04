@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <link src="IW3_Carrinholateral/css/modulo_carrinho_lateral.css"/>
+        <link src="IW3_Carrinholateral/js/modulo_carrinho_lateral.js"/>
+    </head>
+    <referenceContainer name="before.body.end">
+        <block class="Magento\Framework\View\Element\Template" template="IW3_Carrinholateral::topo.phtml"/>
+    </referenceContainer>
+</page>
